@@ -1,103 +1,152 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useEffect, useState } from 'react';
+import Sidebar from './components/Sidebar';
+import Content from './components/Content';
+
+type Car = {
+  id: number;
+  model: string;
+  year: number;
+  engine: string;
+  body: string;
+};
+
+export default function Page() {
+  const [cars, setCars] = useState<Car[]>([]);
+  const [newCar, setNewCar] = useState({
+    model: '',
+    year: '',
+    engine: '',
+    body: '',
+  });
+
+  useEffect(() => {
+    fetchCars();
+  }, []);
+
+  async function fetchCars() {
+    const res = await fetch('/api/bmw');
+    const data = await res.json();
+    setCars(data);
+  }
+
+  async function addCar() {
+    // Lägg till den nya bilen på servern
+    await fetch('/api/bmw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: newCar.model,
+        year: Number(newCar.year),
+        engine: newCar.engine,
+        body: newCar.body,
+      }),
+    });
+
+    // Direkt uppdatera lokal state för att lägga till bilen utan att vänta på servern
+    const addedCar = {
+      id: Date.now(), // Använd ett temporärt ID (du kan justera detta om servern genererar det)
+      model: newCar.model,
+      year: Number(newCar.year),
+      engine: newCar.engine,
+      body: newCar.body,
+    };
+
+    setCars([...cars, addedCar]);
+
+    // Nollställ input-fälten
+    setNewCar({ model: '', year: '', engine: '', body: '' });
+  }
+
+  async function deleteCar(id: number) {
+    console.log("Försöker ta bort bil med id:", id); // debug
+    const res = await fetch('/api/bmw', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+
+    if (res.ok) {
+      setCars(cars.filter(car => car.id !== id));
+    } else {
+      console.error("Borttagning misslyckades");
+    }
+  }
+
+  const hasInput = newCar.model || newCar.year || newCar.engine || newCar.body;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="w-full h-screen flex">
+      <Sidebar />
+      <div className="p-4 w-full">
+        <Content />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Model"
+            value={newCar.model}
+            onChange={(e) => setNewCar({ ...newCar, model: e.target.value })}
+            className="border p-2 mr-2"
+          />
+          <input
+            type="text"
+            placeholder="Year"
+            value={newCar.year}
+            onChange={(e) => setNewCar({ ...newCar, year: e.target.value })}
+            className="border p-2 mr-2"
+          />
+          <input
+            type="text"
+            placeholder="Engine"
+            value={newCar.engine}
+            onChange={(e) => setNewCar({ ...newCar, engine: e.target.value })}
+            className="border p-2 mr-2"
+          />
+          <input
+            type="text"
+            placeholder="Bodystyle"
+            value={newCar.body}
+            onChange={(e) => setNewCar({ ...newCar, body: e.target.value })}
+            className="border p-2 mr-2"
+          />
+          <button onClick={addCar} className="bg-blue-500 text-white p-2">
+            Lägg till bil
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Lista av sparade bilar + live preview */}
+        <ul className="space-y-4">
+          {[...cars, ...(hasInput ? [{
+            id: -1,
+            model: newCar.model,
+            year: Number(newCar.year),
+            engine: newCar.engine,
+            body: newCar.body
+          }] : [])].map((car) => (
+            <li
+              key={car.id}
+              className={`flex justify-between items-start border p-4 rounded shadow-sm ${car.id === -1 ? 'bg-yellow-50' : ''}`}
+            >
+              <div>
+                <p><strong>Model:</strong> {car.model}</p>
+                <p><strong>Year:</strong> {car.year}</p>
+                <p><strong>Engine:</strong> {car.engine}</p>
+                <p><strong>Bodystyle:</strong> {car.body}</p>
+              </div>
+              {car.id !== -1 && (
+                <button
+                  onClick={() => deleteCar(car.id)}
+                  className="text-red-500 ml-4"
+                >
+                  Ta bort
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
